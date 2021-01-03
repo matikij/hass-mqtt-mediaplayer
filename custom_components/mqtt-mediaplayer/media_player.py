@@ -151,51 +151,63 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._power_off_script = None
         self._select_source_script = None
 
-        if next_action := config.get(NEXT_ACTION):
-            self._next_script = Script(hass, next_action, self._name, self._domain)
-        if previous_action := config.get(PREVIOUS_ACTION):
-            self._previous_script = Script(hass, previous_action, self._name, self._domain)
-        if play_action := config.get(PLAY_ACTION):
-            self._play_script = Script(hass, play_action, self._name, self._domain)
-        if pause_action := config.get(PAUSE_ACTION):
-            self._pause_script = Script(hass, pause_action, self._name, self._domain)
-        if stop_action := config.get(STOP_ACTION):
-            self._stop_script = Script(hass, stop_action, self._name, self._domain)
-        if vol_down_action := config.get(VOL_DOWN_ACTION):
-            self._vol_down_script = Script(hass, vol_down_action, self._name, self._domain)
-        if vol_up_action :=config.get(VOL_UP_ACTION):
-            self._vol_up_script = Script(hass, vol_up_action, self._name, self._domain)
-        if vol_mute_action := config.get(VOL_MUTE_ACTION):
-            self._vol_mute_script = Script(hass, vol_mute_action, self._name, self._domain)
-        if vol_unmute_action := config.get(VOL_UNMUTE_ACTION):
-            self._vol_unmute_script = Script(hass, vol_unmute_action, self._name, self._domain)
-        if volume_action := config.get(VOLUME_ACTION):
-            self._vol_script = Script(hass, volume_action, self._name, self._domain)
-        if power_on_action :=config.get(POWER_ON_ACTION):
-            self._power_on_script = Script(hass, power_on_action, self._name, self._domain)
-        if power_off_action :=config.get(POWER_OFF_ACTION):
-            self._power_off_script = Script(hass, power_off_action, self._name, self._domain)
-        if select_source_action :=config.get(SELECT_SOURCE_ACTION):
-            self._select_source_script = Script(hass, select_source_action, self._name, self._domain)
+        self._supported_features = ()
 
         self._player_status_keyword = config.get(PLAYERSTATUS_KEYWORD)
         self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD)
         self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD)
 
-        self._supported_features = (
-            SUPPORT_PLAY
-            | SUPPORT_PAUSE
-            | SUPPORT_PREVIOUS_TRACK
-            | SUPPORT_NEXT_TRACK
-            | SUPPORT_VOLUME_STEP
-        )
+        if play_action := config.get(PLAY_ACTION):
+            self._play_script = Script(hass, play_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_PLAY
 
-        self._supported_features |= (self._vol_mute_script is not None and self._vol_unmute_script is not None and SUPPORT_VOLUME_MUTE)
-        self._supported_features |= self._power_off_script is not None and SUPPORT_TURN_OFF
-        self._supported_features |= self._power_on_script is not None and SUPPORT_TURN_ON
-        self._supported_features |= self._vol_script is not None and SUPPORT_VOLUME_SET
-        self._supported_features |= self._stop_script is not None and SUPPORT_STOP
-        self._supported_features |= self._select_source_script is not None and SUPPORT_SELECT_SOURCE
+        if pause_action := config.get(PAUSE_ACTION):
+            self._pause_script = Script(hass, pause_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_PAUSE
+
+        if stop_action := config.get(STOP_ACTION):
+            self._stop_script = Script(hass, stop_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_STOP
+
+        if vol_down_action := config.get(VOL_DOWN_ACTION):
+            self._vol_down_script = Script(hass, vol_down_action, self._name, self._domain)
+
+        if vol_up_action := config.get(VOL_UP_ACTION):
+            self._vol_up_script = Script(hass, vol_up_action, self._name, self._domain)
+
+        self._supported_features |= self._vol_down_script is not None and self._vol_up_script is not None and SUPPORT_VOLUME_STEP
+
+        if next_action := config.get(NEXT_ACTION):
+            self._next_script = Script(hass, next_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_NEXT_TRACK
+
+        if previous_action := config.get(PREVIOUS_ACTION):
+            self._previous_script = Script(hass, previous_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_PREVIOUS_TRACK
+
+        if vol_mute_action := config.get(VOL_MUTE_ACTION):
+            self._vol_mute_script = Script(hass, vol_mute_action, self._name, self._domain)
+
+        if vol_unmute_action := config.get(VOL_UNMUTE_ACTION):
+            self._vol_unmute_script = Script(hass, vol_unmute_action, self._name, self._domain)
+
+        self._supported_features |= self._vol_mute_script is not None and self._vol_unmute_script is not None and SUPPORT_VOLUME_MUTE
+
+        if power_on_action := config.get(POWER_ON_ACTION):
+            self._power_on_script = Script(hass, power_on_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_TURN_ON
+
+        if power_off_action := config.get(POWER_OFF_ACTION):
+            self._power_off_script = Script(hass, power_off_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_TURN_OFF
+
+        if volume_action := config.get(VOLUME_ACTION):
+            self._vol_script = Script(hass, volume_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_VOLUME_SET
+
+        if select_source_action := config.get(SELECT_SOURCE_ACTION):
+            self._select_source_script = Script(hass, select_source_action, self._name, self._domain)
+            self._supported_features |= SUPPORT_SELECT_SOURCE
 
 
         if config.get(TOPICS) is not None:
@@ -260,8 +272,6 @@ class MQTTMediaPlayer(MediaPlayerEntity):
                 if key == ALBUMART_T:
                     mqtt.subscribe(value, self.albumart_listener)             
 
-                
-
     async def tracktitle_listener(self, event, updates):
         """Listen for the Track Title change"""
         result = updates.pop().result
@@ -293,7 +303,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._album_art = base64.b64decode(msg.payload.replace("\n", ""))
 
     async def mute_listener(self, event, updates):
-        """Listen for the Album Art change"""
+        """Listen for the Mute change"""
         result = updates.pop().result
         _LOGGER.debug("result: "+ str(result))
         _LOGGER.debug("mute: "+ str(self._mute))
@@ -302,21 +312,21 @@ class MQTTMediaPlayer(MediaPlayerEntity):
             self.schedule_update_ha_state(False)
 
     async def power_listener(self, event, updates):
-        """Listen for the Album Art change"""
+        """Listen for the Power Status change"""
         result = updates.pop().result
         self._power = result
         if MQTTMediaPlayer:
             self.schedule_update_ha_state(True)
 
     async def source_listener(self, event, updates):
-        """Listen for the Album Art change"""
+        """Listen for the Source change"""
         result = updates.pop().result
         self._source = result
         if MQTTMediaPlayer:
             self.schedule_update_ha_state(False)
 
     async def sourcelist_listener(self, event, updates):
-        """Listen for the Album Art change"""
+        """Listen for the Source List change"""
         result = updates.pop().result
         self._source_list = result
         if MQTTMediaPlayer:
