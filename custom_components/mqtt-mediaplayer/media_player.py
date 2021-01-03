@@ -28,6 +28,7 @@ from homeassistant.components.media_player.const import (
 )
 from homeassistant.const import (
     CONF_NAME,
+    STATE_ON,
     STATE_OFF,
     STATE_PAUSED,
     STATE_PLAYING,
@@ -70,6 +71,7 @@ VOLUME_ACTION = "volume"
 SELECT_SOURCE_ACTION = "select_source"
 PLAYERSTATUS_KEYWORD = "status_keyword"
 POWEROFFSTATUS_KEYWORD = "power_off_keyword"
+POWERONSTATUS_KEYWORD = "power_on_keyword"
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
@@ -104,6 +106,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(SELECT_SOURCE_ACTION): cv.SCRIPT_SCHEMA,
         vol.Optional(PLAYERSTATUS_KEYWORD): cv.string,
         vol.Optional(POWEROFFSTATUS_KEYWORD): cv.string,
+        vol.Optional(POWERONSTATUS_KEYWORD): cv.string,
     }
 )
 
@@ -177,6 +180,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
 
         self._player_status_keyword = config.get(PLAYERSTATUS_KEYWORD)
         self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD)
+        self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD)
 
         self._supported_features = (
             SUPPORT_PLAY
@@ -327,8 +331,10 @@ class MQTTMediaPlayer(MediaPlayerEntity):
 
     def update(self):
         """ Update the States"""
-        if self._power == self._poweroff_status_keyword:
+        if self._poweroff_status_keyword and self._power == self._poweroff_status_keyword:
             self._state = STATE_OFF
+        elif self._poweron_status_keyword and self._power == self._poweron_status_keyword:
+            self._state = STATE_ON
         elif self._player_status_keyword:
             if self._mqtt_player_state == self._player_status_keyword:
                 self._state = STATE_PLAYING
