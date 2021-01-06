@@ -151,7 +151,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._power_off_script = None
         self._select_source_script = None
 
-        self._supported_features = ()
+        self._supported_features = 0
 
         self._player_status_keyword = config.get(PLAYERSTATUS_KEYWORD)
         self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD)
@@ -169,13 +169,12 @@ class MQTTMediaPlayer(MediaPlayerEntity):
             self._stop_script = Script(hass, stop_action, self._name, self._domain)
             self._supported_features |= SUPPORT_STOP
 
-        if vol_down_action := config.get(VOL_DOWN_ACTION):
-            self._vol_down_script = Script(hass, vol_down_action, self._name, self._domain)
-
         if vol_up_action := config.get(VOL_UP_ACTION):
             self._vol_up_script = Script(hass, vol_up_action, self._name, self._domain)
 
-        self._supported_features |= self._vol_down_script is not None and self._vol_up_script is not None and SUPPORT_VOLUME_STEP
+        if vol_down_action := config.get(VOL_DOWN_ACTION):
+            self._vol_down_script = Script(hass, vol_down_action, self._name, self._domain)
+            self._supported_features |= self._vol_up_script is not None and SUPPORT_VOLUME_STEP
 
         if next_action := config.get(NEXT_ACTION):
             self._next_script = Script(hass, next_action, self._name, self._domain)
@@ -190,8 +189,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
 
         if vol_unmute_action := config.get(VOL_UNMUTE_ACTION):
             self._vol_unmute_script = Script(hass, vol_unmute_action, self._name, self._domain)
-
-        self._supported_features |= self._vol_mute_script is not None and self._vol_unmute_script is not None and SUPPORT_VOLUME_MUTE
+            self._supported_features |= self._vol_mute_script is not None and SUPPORT_VOLUME_MUTE
 
         if power_on_action := config.get(POWER_ON_ACTION):
             self._power_on_script = Script(hass, power_on_action, self._name, self._domain)
