@@ -72,8 +72,8 @@ VOLUME_ACTION = "volume"
 SELECT_SOURCE_ACTION = "select_source"
 
 PLAYERSTATUS_KEYWORD = "status_keyword"
-POWEROFFSTATUS_KEYWORD = "power_off_keyword"
-POWERONSTATUS_KEYWORD = "power_on_keyword"
+POWEROFFSTATUS_KEYWORD = "off"
+POWERONSTATUS_KEYWORD = "on"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -352,7 +352,6 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         """Listen for Player State changes"""
         result = updates.pop().result
         _LOGGER.debug("State Listener: " + str(result))
-        self._source_list = result
         self._mqtt_player_state = str(result)
         if self.hass:
             self.schedule_update_ha_state(True)
