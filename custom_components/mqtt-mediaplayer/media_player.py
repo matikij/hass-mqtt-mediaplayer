@@ -115,7 +115,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the MQTT Media Player platform."""
-    add_entities([MQTTMediaPlayer(hass, config)],)
+    add_entities([MQTTMediaPlayer(hass, config)],True)
 
 
 class MQTTMediaPlayer(MediaPlayerEntity):
@@ -128,6 +128,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         mqtt = hass.components.mqtt
         self._domain = __name__.split(".")[-2]
         self._name = config.get(CONF_NAME)
+        self._unique_id = config.get(CONF_UNIQUE_ID)
         self._volume = 0.0
         self._track_name = ""
         self._track_artist = ""
@@ -158,8 +159,6 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._player_status_keyword = config.get(PLAYERSTATUS_KEYWORD)
         self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD)
         self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD)
-
-        self._unique_id = config.get(CONF_UNIQUE_ID)
 
         if play_action := config.get(PLAY_ACTION):
             self._play_script = Script(hass, play_action, self._name, self._domain)
@@ -290,7 +289,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         """Listen for the Track Title change"""
         result = updates.pop().result
         self._track_name = result
-        if MQTTMediaPlayer:
+        if self.hass:
             self.schedule_update_ha_state(False)
 
     async def artist_listener(self, event, updates):
@@ -309,7 +308,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         _LOGGER.debug("Volume Listener: " + str(result))
         if isinstance(result, int):
             self._volume = int(result) / 100.0
-            if MQTTMediaPlayer:
+            if self.hass:
                 self.schedule_update_ha_state(False)
 
     async def albumart_listener(self, msg):
@@ -322,7 +321,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         _LOGGER.debug("result: "+ str(result))
         _LOGGER.debug("mute: "+ str(self._mute))
         self._mute = result
-        if MQTTMediaPlayer:
+        if self.hass:
             self.schedule_update_ha_state(False)
 
     async def power_listener(self, event, updates):
@@ -330,7 +329,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         result = updates.pop().result
         _LOGGER.debug("Power Listener: " + str(result))
         self._power = result
-        if MQTTMediaPlayer:
+        if self.hass:
             self.schedule_update_ha_state(True)
 
     async def source_listener(self, event, updates):
@@ -338,7 +337,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         result = updates.pop().result
         _LOGGER.debug("Source change Listener: " + str(result))
         self._source = result
-        if MQTTMediaPlayer:
+        if self.hass:
             self.schedule_update_ha_state(False)
 
     async def sourcelist_listener(self, event, updates):
@@ -346,7 +345,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         result = updates.pop().result
         _LOGGER.debug("Source List change Listener: " + str(result))
         self._source_list = result
-        if MQTTMediaPlayer:
+        if self.hass:
             self.schedule_update_ha_state(False)
 
     async def state_listener(self, event, updates):
@@ -355,7 +354,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         _LOGGER.debug("State Listener: " + str(result))
         self._source_list = result
         self._mqtt_player_state = str(result)
-        if MQTTMediaPlayer:
+        if self.hass:
             self.schedule_update_ha_state(True)
 
     def update(self):
