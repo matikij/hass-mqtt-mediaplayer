@@ -48,40 +48,47 @@ Allows you to use MQTT topics to fill out the information needed for the Home As
 ```yaml
 media_player:  
   - platform: mqtt-mediaplayer
-    name: "Musicbee"
+    name: Rotel
+    unique_id: some-unique-d
     topic:
-      song_title: "{{ states('sensor.musicbee_nowplaying_songtitle') }}"
-      song_artist: "{{ states('sensor.musicbee_nowplaying_artist') }}"
-      song_album: "{{ states('sensor.musicbee_nowplaying_album') }}"
-      song_volume: "{{ states('sensor.musicbee_nowplaying_playervolume') }}"
-      player_status: "{{ states('sensor.musicbee_playingstatus') }}"
-      album_art: "musicbee/albumart"
-      volume:
-        service: mqtt.publish
-        data:
-          topic: "musicbee/command"
-          payload: "{\"command\":\"volume_set\", \"args\":{\"volume\":\"{{volume}}\"}}"
-    status_keyword: "true"
-    next:
+      sourcelist: "{{ states('sensor.rotel_config_source_list') }}"
+      source: "{{ states('sensor.rotel_state_source') }}"
+      power: "{{ states('sensor.rotel_state_power') }}"
+    power_on:
       service: mqtt.publish
       data:
-        topic: "musicbee/command"
-        payload: "{\"command\": \"next\"}"
-    previous:
+        topic: "rotel/command"
+        payload: '{"command": "power_on"}'
+    power_off:
       service: mqtt.publish
       data:
-        topic: "musicbee/command"
-        payload: "{\"command\": \"previous\"}"
-    play:
+        topic: "rotel/command"
+        payload: '{"command":"power_off"}'
+    vol_up:
       service: mqtt.publish
       data:
-        topic: "musicbee/command"
-        payload: "{\"command\": \"play\"}"
-    pause:
+        topic: "rotel/command"
+        payload: '{"command":"volume_up"}'
+    vol_down:
       service: mqtt.publish
       data:
-        topic: "musicbee/command"
-        payload: "{\"command\": \"pause\"}"
+        topic: "rotel/command"
+        payload: '{"command":"volume_down"}'
+    vol_mute:
+      service: mqtt.publish
+      data:
+        topic: "rotel/command"
+        payload: '{"command":"mute_toggle"}'
+    vol_unmute:
+      service: mqtt.publish
+      data:
+        topic: "rotel/command"
+        payload: '{"command":"mute_toggle"}'
+    select_source:
+      service: mqtt.publish
+      data:
+        topic: "rotel/source/set"
+        payload_template: '{"source": "{{ source }}"}'
 
 ```
 
