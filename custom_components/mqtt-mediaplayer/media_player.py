@@ -157,7 +157,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._supported_features = 0
 
         self._player_status_keyword = config.get(PLAYERSTATUS_KEYWORD)
-        self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD) or "off"
+        self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD) or "standby"
         self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD) or "on"
 
         if play_action := config.get(PLAY_ACTION):
