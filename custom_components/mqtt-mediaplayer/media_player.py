@@ -72,8 +72,8 @@ VOLUME_ACTION = "volume"
 SELECT_SOURCE_ACTION = "select_source"
 
 PLAYERSTATUS_KEYWORD = "status_keyword"
-POWEROFFSTATUS_KEYWORD = "off"
-POWERONSTATUS_KEYWORD = "on"
+POWEROFFSTATUS_KEYWORD = "power_off_keyword"
+POWERONSTATUS_KEYWORD = "power_on_keyword"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -157,8 +157,8 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._supported_features = 0
 
         self._player_status_keyword = config.get(PLAYERSTATUS_KEYWORD)
-        self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD)
-        self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD)
+        self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD) or "off"
+        self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD) or "on"
 
         if play_action := config.get(PLAY_ACTION):
             self._play_script = Script(hass, play_action, self._name, self._domain)
