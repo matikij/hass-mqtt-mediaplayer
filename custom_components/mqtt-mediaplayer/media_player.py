@@ -28,6 +28,7 @@ from homeassistant.components.media_player.const import (
 )
 from homeassistant.const import (
     CONF_NAME,
+    CONF_UNIQUE_ID,
     STATE_ON,
     STATE_OFF,
     STATE_PAUSED,
@@ -69,14 +70,15 @@ VOL_MUTE_ACTION = "vol_mute"
 VOL_UNMUTE_ACTION = "vol_unmute"
 VOLUME_ACTION = "volume"
 SELECT_SOURCE_ACTION = "select_source"
+
 PLAYERSTATUS_KEYWORD = "status_keyword"
 POWEROFFSTATUS_KEYWORD = "power_off_keyword"
 POWERONSTATUS_KEYWORD = "power_on_keyword"
 
-
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_NAME): cv.string,
+        vol.Required(CONF_UNIQUE_ID): cv.string,
         vol.Optional(TOPICS): vol.All(
             {
                 vol.Optional(SONGTITLE_T): cv.template,
@@ -157,17 +159,22 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         self._poweroff_status_keyword = config.get(POWEROFFSTATUS_KEYWORD)
         self._poweron_status_keyword = config.get(POWERONSTATUS_KEYWORD)
 
+        self._unique_id = config.get(CONF_UNIQUE_ID)
+
         if play_action := config.get(PLAY_ACTION):
             self._play_script = Script(hass, play_action, self._name, self._domain)
             self._supported_features |= SUPPORT_PLAY
+            _LOGGER.debug("Play action supported")
 
         if pause_action := config.get(PAUSE_ACTION):
             self._pause_script = Script(hass, pause_action, self._name, self._domain)
             self._supported_features |= SUPPORT_PAUSE
+            _LOGGER.debug("Pause action supported")
 
         if stop_action := config.get(STOP_ACTION):
             self._stop_script = Script(hass, stop_action, self._name, self._domain)
             self._supported_features |= SUPPORT_STOP
+            _LOGGER.debug("Stop action supported")
 
         if vol_up_action := config.get(VOL_UP_ACTION):
             self._vol_up_script = Script(hass, vol_up_action, self._name, self._domain)
@@ -175,37 +182,46 @@ class MQTTMediaPlayer(MediaPlayerEntity):
         if vol_down_action := config.get(VOL_DOWN_ACTION):
             self._vol_down_script = Script(hass, vol_down_action, self._name, self._domain)
             self._supported_features |= self._vol_up_script is not None and SUPPORT_VOLUME_STEP
+            _LOGGER.debug("Volume step actions (up and down) supported")
 
         if next_action := config.get(NEXT_ACTION):
             self._next_script = Script(hass, next_action, self._name, self._domain)
             self._supported_features |= SUPPORT_NEXT_TRACK
+            _LOGGER.debug("Next track action supported")
 
         if previous_action := config.get(PREVIOUS_ACTION):
             self._previous_script = Script(hass, previous_action, self._name, self._domain)
             self._supported_features |= SUPPORT_PREVIOUS_TRACK
+            _LOGGER.debug("Previous track action supported")
 
         if vol_mute_action := config.get(VOL_MUTE_ACTION):
             self._vol_mute_script = Script(hass, vol_mute_action, self._name, self._domain)
+            _LOGGER.debug("Volume mute action supported")
 
         if vol_unmute_action := config.get(VOL_UNMUTE_ACTION):
             self._vol_unmute_script = Script(hass, vol_unmute_action, self._name, self._domain)
             self._supported_features |= self._vol_mute_script is not None and SUPPORT_VOLUME_MUTE
+            _LOGGER.debug("Volume unmute action supported")
 
         if power_on_action := config.get(POWER_ON_ACTION):
             self._power_on_script = Script(hass, power_on_action, self._name, self._domain)
             self._supported_features |= SUPPORT_TURN_ON
+            _LOGGER.debug("Power on action supported")
 
         if power_off_action := config.get(POWER_OFF_ACTION):
             self._power_off_script = Script(hass, power_off_action, self._name, self._domain)
             self._supported_features |= SUPPORT_TURN_OFF
+            _LOGGER.debug("Power off action supported")
 
         if volume_action := config.get(VOLUME_ACTION):
             self._vol_script = Script(hass, volume_action, self._name, self._domain)
             self._supported_features |= SUPPORT_VOLUME_SET
+            _LOGGER.debug("Set Volume action supported")
 
         if select_source_action := config.get(SELECT_SOURCE_ACTION):
             self._select_source_script = Script(hass, select_source_action, self._name, self._domain)
             self._supported_features |= SUPPORT_SELECT_SOURCE
+            _LOGGER.debug("Select source action supported")
 
 
         if config.get(TOPICS) is not None:
@@ -312,6 +328,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
     async def power_listener(self, event, updates):
         """Listen for the Power Status change"""
         result = updates.pop().result
+        _LOGGER.debug("Power Listener: " + str(result))
         self._power = result
         if MQTTMediaPlayer:
             self.schedule_update_ha_state(True)
@@ -319,6 +336,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
     async def source_listener(self, event, updates):
         """Listen for the Source change"""
         result = updates.pop().result
+        _LOGGER.debug("Source change Listener: " + str(result))
         self._source = result
         if MQTTMediaPlayer:
             self.schedule_update_ha_state(False)
@@ -326,6 +344,7 @@ class MQTTMediaPlayer(MediaPlayerEntity):
     async def sourcelist_listener(self, event, updates):
         """Listen for the Source List change"""
         result = updates.pop().result
+        _LOGGER.debug("Source List change Listener: " + str(result))
         self._source_list = result
         if MQTTMediaPlayer:
             self.schedule_update_ha_state(False)
@@ -333,6 +352,8 @@ class MQTTMediaPlayer(MediaPlayerEntity):
     async def state_listener(self, event, updates):
         """Listen for Player State changes"""
         result = updates.pop().result
+        _LOGGER.debug("State Listener: " + str(result))
+        self._source_list = result
         self._mqtt_player_state = str(result)
         if MQTTMediaPlayer:
             self.schedule_update_ha_state(True)
@@ -352,6 +373,10 @@ class MQTTMediaPlayer(MediaPlayerEntity):
     @property
     def should_poll(self):
         return False
+
+    @property
+    def unique_id(self):
+        return self._unique_id
 
     @property
     def name(self):
